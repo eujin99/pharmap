@@ -1,0 +1,308 @@
+<!-- freenboard.html -->
+
+<html>
+
+<head>
+    <title>자유게시판</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+        }
+
+        #header {
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            padding: 10px;
+        }
+
+        #content {
+            max-width: 800px;
+            margin: 20px auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        button {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #postList {
+            list-style: none;
+            padding: 0;
+        }
+
+        #postList li {
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+        }
+
+        #postModal,
+        #commentModal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            z-index: 2;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .pharmacist-background {
+            /* 추가: 약사인 경우의 배경색 */
+            background-color: #e6f7ff;
+        }
+    </style>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+
+<body>
+    <div id="header">
+        <!-- 로그인 여부 확인 스크립트 추가 -->
+        <script>
+            // 로그인 여부를 확인하고 userType을 설정하는 함수
+            async function checkLoginStatus() {
+                try {
+                    const response = await fetch('/get-user-info');
+                    if (response.ok) {
+                        const userInfo = await response.json();
+                        userType = userInfo.userType; // userType 설정
+
+                        // 사용자가 로그인한 경우 UI 조작
+                        document.getElementById('writePostBtn').style.display = userType === 'pharmacist' ? 'block' : 'none';
+                    } else {
+                        console.error('로그인이 필요합니다.');
+                        // 사용자가 로그인하지 않은 경우 UI 조작
+                        document.getElementById('loginMessage').innerText = '로그인이 필요합니다.';
+                    }
+                } catch (error) {
+                    console.error('에러 발생:', error.message);
+                }
+            }
+
+            window.addEventListener('load', () => {
+                checkLoginStatus();
+                fetchPosts();
+                displayWelcomeMessage();
+            });
+        </script>
+    </div>
+
+    <div id="content">
+        <h1>자유게시판</h1>
+
+        <!-- 글 작성 버튼 -->
+        <button id="writePostBtn" style="display:none;" onclick="openPostModal()">글 작성</button>
+
+        <!-- 로그인 안내 메시지 -->
+        <p id="loginMessage"></p>
+
+        <!-- 글 목록 -->
+        <ul id="postList"></ul>
+    </div>
+
+    <!-- 글 작성 모달 -->
+    <div id="postModal" style="display:none;">
+        <h2>글 작성</h2>
+        <form onsubmit="writePost(); return false;">
+            <textarea id="postContent" required></textarea>
+            <button type="submit">작성</button>
+        </form>
+        <button onclick="closePostModal()">닫기</button>
+    </div>
+
+    <script>
+        let userType; // 전역 변수로 선언
+
+        // 글을 가져와서 표시하는 함수
+        async function fetchPosts() {
+            try {
+                const response = await fetch('/posts');
+                if (response.ok) {
+                    const posts = await response.json();
+                    const postListElement = document.getElementById('postList');
+
+                    // 기존의 글 목록을 지웁니다.
+                    postListElement.innerHTML = '';
+
+                    // 글 목록을 순회하며 리스트 아이템을 생성합니다.
+                    posts.forEach(post => {
+                        const listItem = document.createElement('li');
+                        listItem.innerHTML = `
+                            <strong>${post.username}</strong>: ${post.content}
+                        `;
+                        postListElement.appendChild(listItem);
+                    });
+                } else {
+                    console.error('글 목록을 가져오는 데 실패했습니다.');
+                }
+            } catch (error) {
+                console.error('에러 발생:', error.message);
+            }
+        }
+
+        // 페이지 로드 시 글 목록을 가져와서 표시합니다.
+        window.addEventListener('load', () => {
+            checkLoginStatus();
+            fetchPosts();
+        });
+
+        // 글 작성 모달 열기
+        function openPostModal() {
+            document.getElementById('postModal').style.display = 'block';
+        }
+
+        // 글 작성 모달 닫기
+        function closePostModal() {
+            document.getElementById('postModal').style.display = 'none';
+        }
+
+        // 글 작성 처리
+        async function writePost() {
+            const postContent = document.getElementById('postContent').value;
+
+            try {
+                const response = await fetch('/posts', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        content: postContent,
+                    }),
+                });
+
+                if (response.ok) {
+                    console.log('글 작성 성공');
+                    // 여기에 필요한 UI 갱신 등 추가 작업 수행
+                    // 글 작성 후 글 목록을 다시 가져오도록 수정
+                    fetchPosts();
+                } else {
+                    console.error('글 작성 실패');
+                    // 실패 시 사용자에게 알림 등을 보여줄 수 있음
+                }
+            } catch (error) {
+                console.error('에러 발생:', error.message);
+            }
+
+            // 모달 닫기
+            closePostModal();
+        }
+    </script>
+
+    <script>
+        // 로그인 여부를 확인하고 userType을 설정하는 함수
+        async function checkLoginStatus() {
+            try {
+                const response = await fetch('/get-user-info');
+                if (response.ok) {
+                    const userInfo = await response.json();
+                    userType = userInfo.userType; // userType 설정
+
+                    // 사용자가 로그인한 경우 UI 조작
+                    document.getElementById('writePostBtn').style.display = userType === 'pharmacist' ? 'block' : 'none';
+                } else {
+                    console.error('로그인이 필요합니다.');
+                    // 사용자가 로그인하지 않은 경우 UI 조작
+                    document.getElementById('loginMessage').innerText = '로그인이 필요합니다.';
+                }
+            } catch (error) {
+                console.error('에러 발생:', error.message);
+            }
+        }
+
+        // 환영 메시지 표시 함수
+        async function displayWelcomeMessage() {
+            try {
+                // 1. 로그인 여부 확인 및 userType 설정
+                await checkLoginStatus();
+
+                // 2. 환영 메시지 요소 및 사용자 정보 가져오기
+                const welcomeMessageElement = document.getElementById('welcomeMessage');
+                const response = await fetch('/get-user-info');
+
+                if (response.ok) {
+                    const userInfo = await response.json();
+
+                    // 3. 사용자가 로그인되었을 때의 처리
+                    welcomeMessageElement.textContent = `${userInfo.username}님 반갑습니다.`;
+                    document.getElementById('logoutButton').style.display = 'block';
+                    document.getElementById('registerbutton').style.display = 'none';
+                    document.getElementById('loginbutton').style.display = 'none';
+
+                    // 4. userType이 'pharmacist'인 경우 배경색 변경
+                    if (userInfo.userType === 'pharmacist') {
+                        document.body.classList.add('pharmacist-background');
+                    }
+                } else {
+                    // 5. 사용자가 로그인되지 않았을 때의 처리
+                    console.error('사용자 정보를 가져오는 데 실패했습니다.');
+                    welcomeMessageElement.style.display = 'none';
+                    document.getElementById('logoutButton').style.display = 'none';
+                }
+            } catch (error) {
+                console.error('에러 발생:', error.message);
+            }
+        }
+
+        // 로그아웃 함수
+        async function logout() {
+            try {
+                const response = await fetch('/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+
+                if (response.ok) {
+                    // 로그아웃이 성공했을 때 처리할 내용 추가
+                    console.log('로그아웃 성공');
+
+                    // 로그아웃 후 리다이렉트 등 필요한 작업 수행
+                    window.location.href = '/login';
+                } else {
+                    console.error('로그아웃에 실패했습니다.');
+                }
+            } catch (error) {
+                console.error('에러 발생:', error.message);
+            }
+        }
+
+        window.addEventListener('load', displayWelcomeMessage);
+    </script>
+</body>
+
+</html>

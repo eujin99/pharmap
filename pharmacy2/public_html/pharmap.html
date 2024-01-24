@@ -1,0 +1,627 @@
+<html>
+<head>
+    <link rel="stylesheet" type="text/css" href="styles.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script type="text/javascript" src="https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=jonrpxpd0r&amp;submodules=geocoder"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+</head>
+<body>
+    <div id="topbar">
+        <img src="./PHARMAP_logo.png" alt="Pharmap Logo" id="logo" onclick="location.href='/index.html'">
+
+        <div id="searchBox">
+            <label for="searchInput">검색</label>
+            <input type="text" id="searchInput" placeholder="약국명 또는 지역">
+            <button id="searchButton" onclick="searchPharmacies()">검색</button>
+        </div>
+    
+
+        <div id="topbar-content">
+               <!-- 상단바에 위치 표시 추가 -->
+<div id="topbar-location">
+    <div id="location-box"></div>
+</div>
+
+            <div id="welcomeMessage">{username}님 반갑습니다</div>
+            <button onclick="location.href='/pharmap.html'">파맵이란?</button>
+            <button onclick="location.href='/freeboard.html'">자유게시판</button>
+            <button id="logoutButton" onclick="logout()">로그아웃</button>
+            <button id="registerbutton" onclick="location.href='/register'">회원가입</button>
+            <button id="loginbutton" onclick="location.href='/login'">로그인</button>
+            
+        </div>
+    </div>
+
+
+    <div id="pharmap-main">
+        <img src="./maps.png">
+    </div>
+    
+    <!-- 채팅창 -->
+    <div id="chatBox">
+        <div id="chatBoxTitle"></div>
+        <div id="chatMessages"></div>
+        <div id="chatInputContainer">
+            <input type="text" id="chatInput" placeholder="채팅을 입력하세요">
+            <button id="sendButton" onclick="sendChatMessage()">전송</button>
+        </div>
+    </div>
+
+<script>
+    var myAnonymousId;
+    var userType;
+</script>
+    
+
+<!-- 상단바 위치 표시 스크립트 추가 -->
+<script>
+    // 위치 표시 함수 호출
+    displayUserLocation();
+
+    async function displayUserLocation() {
+        try {
+            // 사용자 위치 가져오기
+            const userLocation = await getUserLocation();
+            const locationBoxElement = document.getElementById('location-box');
+
+            // 위치 표시 메시지 생성
+            const locationMessage = `현재 당신의 위치는 ${userLocation} 입니다. 주변 약국을 확인해보세요!`;
+
+            // 위치 표시 메시지 삽입
+            locationBoxElement.textContent = locationMessage;
+        } catch (error) {
+            console.error('위치 가져오기에 실패했습니다:', error.message);
+        }
+    }
+
+    async function getUserLocation() {
+        return new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const { latitude, longitude } = position.coords;
+                    const userLocation = `위도 ${latitude.toFixed(2)}, 경도 ${longitude.toFixed(2)}`;
+                    resolve(userLocation);
+                },
+                (error) => {
+                    reject(error);
+                }
+            );
+        });
+    }
+</script>
+
+        
+    
+       <script>
+
+
+
+
+ // 로그인 여부를 확인하고 userType을 설정하는 함수
+ async function checkLoginStatus() {
+        try {
+            const response = await fetch('/get-user-info');
+            if (response.ok) {
+                const userInfo = await response.json();
+                userType = userInfo.userType; // userType 설정
+            }
+        } catch (error) {
+            console.error('에러 발생:', error.message);
+        }
+    }
+
+
+    async function displayWelcomeMessage() {
+    try {
+        // 1. 로그인 여부 확인 및 userType 설정
+        await checkLoginStatus();
+
+        // 2. 환영 메시지 요소 및 사용자 정보 가져오기
+        const welcomeMessageElement = document.getElementById('welcomeMessage');
+        const response = await fetch('/get-user-info');
+
+        if (response.ok) {
+            const userInfo = await response.json();
+
+            // 3. 사용자가 로그인되었을 때의 처리
+            welcomeMessageElement.textContent = `${userInfo.username}님 반갑습니다.`;
+            document.getElementById('logoutButton').style.display = 'block';
+            document.getElementById('registerbutton').style.display = 'none';
+            document.getElementById('loginbutton').style.display = 'none';
+
+            // 4. userType이 'pharmacist'인 경우 배경색 변경
+            if (userInfo.userType === 'pharmacist') {
+                document.body.classList.add('pharmacist-background');
+            }
+
+        } else {
+            // 5. 사용자가 로그인되지 않았을 때의 처리
+            console.error('사용자 정보를 가져오는 데 실패했습니다.');
+            welcomeMessageElement.style.display = 'none';
+            document.getElementById('logoutButton').style.display = 'none';
+        }
+
+    } catch (error) {
+        console.error('에러 발생:', error.message);
+    }
+}
+
+
+
+    // 로그아웃 버튼 클릭 시 호출되는 함수
+    async function logout() {
+        try {
+            const response = await fetch('/logout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            if (response.ok) {
+                // 로그아웃이 성공했을 때 처리할 내용 추가
+                console.log('로그아웃 성공');
+                
+                // 로그아웃 후 리다이렉트 등 필요한 작업 수행
+                window.location.href = '/login';
+            } else {
+                console.error('로그아웃에 실패했습니다.');
+            }
+        } catch (error) {
+            console.error('에러 발생:', error.message);
+        }
+    }
+
+    window.addEventListener('load', displayWelcomeMessage);
+</script>
+<script>
+const socket = io.connect("http://localhost:4000");
+
+let sessionId = getSessionId();  // 세션 ID를 전역 변수로 선언하고 초기화합니다.
+
+function joinRoom(pharmacyId) {
+    let sessionId = getSessionId();
+    
+    const previousChat = document.getElementById('chatMessages').innerHTML;
+
+    socket.emit('joinRoom', pharmacyId, sessionId);
+
+    // 클라이언트에게 이전 채팅 내용을 복원하도록 요청
+    socket.emit('restoreChat', pharmacyId, previousChat);
+}
+
+// 서버에서 이전 채팅 내용을 받아와 화면에 표시
+socket.on('restoreChat', (previousChat) => {
+    document.getElementById('chatMessages').innerHTML = previousChat;
+});
+
+// 기존의 sendChatMessage 함수 수정
+function sendChatMessage(pharmacyId) {
+        const message = document.getElementById('chatInput').value;
+        socket.emit('chatMessage', pharmacyId, message, userType); // 익명번호 대신 userType을 전달
+        document.getElementById('chatInput').value = '';
+    }
+
+    function getSessionId() {
+    // 세션 ID를 전역 변수로 선언하고 초기화합니다.
+    let sessionId = sessionStorage.getItem('sessionId');
+    if (!sessionId) {
+        sessionId = generateRandomId();
+        sessionStorage.setItem('sessionId', sessionId);
+    }
+    return sessionId;
+}
+
+// generateRandomId 함수 추가
+function generateRandomId() {
+        var randomId;
+        do {
+            randomId = Math.floor(1000 + Math.random() * 9000);
+        } while (usedRandomIds.includes(randomId));
+        usedRandomIds.push(randomId);
+        return randomId;
+    }
+
+        // 전역 변수로 현재 사용 중인 익명 숫자 목록을 저장할 배열 선언
+        var usedRandomIds = [];
+    
+        
+        // 사용 가능한 익명 숫자를 가져오는 함수
+        function getAvailableRandomId() {
+            var randomId = generateRandomId();
+        
+            // 이미 사용 중인 익명 숫자인 경우, 다른 숫자를 가져옴
+            while (usedRandomIds.includes(randomId)) {
+                randomId = generateRandomId();
+            }
+        
+            // 사용한 익명 숫자를 목록에 추가
+            usedRandomIds.push(randomId);
+        
+            return randomId;
+        }
+        
+        // releaseRandomId 함수 추가
+    function releaseRandomId(randomId) {
+        var index = usedRandomIds.indexOf(randomId);
+        if (index !== -1) {
+            usedRandomIds.splice(index, 1);
+        }
+    }
+       
+    
+        // 클라이언트에게 익명 번호 할당
+        socket.on('assignAnonymousId', (anonymousId) => {
+        myAnonymousId = anonymousId;
+    });
+
+
+// 서버에서 채팅 메시지를 받는 함수
+socket.on('message', (message, senderAnonymousId, senderUserType) => {
+    var chatMessages = document.getElementById("chatMessages");
+    var formattedMessage = formatChatMessage(message, senderAnonymousId, senderUserType);
+    var messageElement = document.createElement("p");
+
+    // 자신이 보낸 메시지인 경우 클래스 추가
+    if (senderAnonymousId === myAnonymousId) {
+        messageElement.classList.add('myMessage');
+    }
+
+    // 약사인 경우 클래스 추가하여 스타일 적용
+    if (senderUserType === 'pharmacist') {
+        messageElement.classList.add('pharmacist');
+    }
+
+    messageElement.innerHTML = formattedMessage;
+    chatMessages.appendChild(messageElement);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+});
+
+function formatChatMessage(message, senderAnonymousId, senderUserType) {
+    var currentDate = new Date();
+    var formattedTime = currentDate.toLocaleString('ko-KR', { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true });
+
+    // senderAnonymousId가 존재하면 익명번호, 아니면 username을 표시
+    var senderInfo = senderUserType === 'pharmacist' ? '약사' : senderAnonymousId ? "익명" + senderAnonymousId : "{username}";
+
+    return senderInfo + " : " + message + " [" + formattedTime + "]";
+}
+        
+
+// 기존의 sendChatMessage 함수 수정
+function sendChatMessage(pharmacyId) {
+    const message = document.getElementById('chatInput').value;
+    socket.emit('chatMessage', pharmacyId, message, myAnonymousId, userType);
+    document.getElementById('chatInput').value = '';
+}
+
+
+        // 4자리 임의의 숫자 생성 함수
+        function generateRandomId() {
+            return Math.floor(1000 + Math.random() * 9000);
+        }
+        
+        
+// 채팅방을 나가는 함수
+function leaveRoom(pharmacyId) {
+    socket.emit('leaveRoom', pharmacyId);
+    toggleChatBox();  // 나갈 때 채팅방을 숨깁니다.
+}
+
+// 클라이언트 측 수정 - index.html
+socket.on('leftRoom', (pharmacyId) => {
+    // 나간 채팅방의 UI 등을 업데이트하거나 필요한 동작을 수행합니다.
+    console.log(`약국 ${pharmacyId} 채팅방을 나갔습니다.`);
+});
+
+        
+        // 채팅창 열기 함수
+        function openChatBox(pharmacyId, pharmacyName) {
+    joinRoom(pharmacyId); // 채팅방에 참가합니다.
+    toggleChatBox(); // 채팅 상자를 전환합니다.
+
+    // 채팅 상자에 약국 이름을 표시합니다.
+    document.getElementById('chatBoxTitle').innerText = `[${pharmacyName}의 채팅방입니다.]`;
+}
+        
+        // 채팅창 토글 함수
+        function toggleChatBox() {
+            var chatBox = document.getElementById('chatBox');
+            chatBox.style.display = (chatBox.style.display === 'none') ? 'block' : 'none';
+        }
+        
+        // HTML에서 전송 버튼을 클릭했을 때 호출되는 함수
+        function sendMessage() {
+          // 입력된 채팅 내용을 가져옴
+          var message = document.getElementById("chat-input").value;
+        
+          // 가져온 채팅 내용을 채팅창에 나타냄
+          var chatWindow = document.getElementById("chat-window");
+          chatWindow.innerHTML += "<p>" + message + "</p>";
+        
+          // 채팅 입력창을 비움
+          document.getElementById("chat-input").value = "";
+        }
+        
+                // HTML에서 채팅 입력창에서 키를 눌렀을 때 호출되는 함수
+                function handleKeyPress(event) {
+          // 눌러진 키의 keyCode를 가져옴
+          var keyCode = event.keyCode || event.which;
+        
+          // 만약 눌러진 키가 엔터 키(13)라면 sendMessage() 함수 호출
+          if (keyCode === 13) {
+            sendMessage();
+          }
+        }
+        
+        
+        
+            </script>
+        
+        
+</body>
+    
+    <script>
+
+
+        function toggleSidebar() {
+            var sidebar = document.getElementById('sidebar');
+            sidebar.style.left = (sidebar.style.left === "0px") ? "-200px" : "0px";
+        }
+
+        $(document).ready(async function(){
+            let map = await initializeMap();
+            await displayPharmacies(map);
+
+            window.searchPharmacies = async function() {
+                let searchKeyword = $('#searchInput').val();
+                let map = await initializeMap();
+
+                if (searchKeyword) {
+                    await displayPharmaciesBySearch(map, searchKeyword);
+                } else {
+                    await displayPharmacies(map);
+                }
+            };
+
+            $('#searchInput').keypress(function(event){
+                if(event.keyCode == 13){
+                    searchPharmacies();
+                }
+            });
+
+            async function initializeMap() {
+                let XY = await getLocation();
+                var mapDiv = document.getElementById('map');
+                var mapOptions = {
+                    center: new naver.maps.LatLng(XY.lat, XY.lng),
+                    zoom: 14
+                }
+                return new naver.maps.Map(mapDiv, mapOptions);
+            }
+
+            async function displayPharmacies(map, searchKeyword = "", sido = "", gubun = "") {
+                let XY = await getLocation();
+
+    if (!sido || !gubun) {
+        await naver.maps.Service.reverseGeocode({
+            location: new naver.maps.LatLng(XY.lat, XY.lng)
+        }, function (status, response) {
+            let result = response.result;
+            let items = result.items;
+            let sido_arr = items[0].addrdetail.sido.split(" ");
+            let gubun_arr = items[0].addrdetail.sigugun.split(" ");
+
+            if (sido_arr.length > 0) {
+                sido = sido_arr[0];
+            }
+            if (gubun_arr.length > 0) {
+                gubun = gubun_arr[0];
+            }
+        });
+    }
+
+                await naver.maps.Service.reverseGeocode({
+                    location: new naver.maps.LatLng(XY.lat, XY.lng)
+                }, function (status, response) {
+                    let result = response.result;
+                    let items = result.items;
+                    let sido_arr = items[0].addrdetail.sido.split(" ");
+                    let gubun_arr = items[0].addrdetail.sigugun.split(" ");
+
+                    let sido = "";
+                    let gubun = "";
+                    if (sido_arr.length == 1) {
+                        sido = sido_arr[0];
+                        gubun = gubun_arr[0];
+                    }
+                    else if (sido_arr.length > 1) {
+                        sido = sido_arr[0];
+                        gubun = sido_arr[1];
+                    }
+
+                    $.ajax({
+                        url: "/pharmach_list",
+                        type: "GET",
+                        cache: false,
+                        dataType: "json",
+                        data: {
+                            "Q0": sido,
+                            "Q1": gubun,
+                            "QT": "",
+                            "QN": searchKeyword,
+                            "ORD": "",
+                            "pageNo": "1",
+                            "numOfRows": "1000"
+                        },
+                        success: function (data) {
+                            console.log(data);
+
+                            if (data.items && data.items.item) {
+                                if (Array.isArray(data.items.item)) {
+                                    data.items.item.forEach(function (it, index) {
+                                        displayMarkerAndInfo(map, it);
+                                    });
+                                } else {
+                                    // 하나의 결과인 경우
+                                    displayMarkerAndInfo(map, data.items.item);
+                                }
+
+                                if (data.items.item.length > 0) {
+                                    // 가장 많은 결과가 있는 위치로 지도 이동
+                                    let mostResultLocation = Array.isArray(data.items.item)
+                                        ? data.items.item[0]
+                                        : data.items.item;
+                                    map.panTo(new naver.maps.LatLng(mostResultLocation.wgs84Lat, mostResultLocation.wgs84Lon));
+                                }
+                            } else {
+                                console.error("응답에서 항목을 찾을 수 없습니다.");
+                            }
+                        },
+                        error: function (request, status, error) {
+                            console.log(error);
+                        }
+                    });
+                });
+            }
+
+            async function displayPharmaciesBySearch(map, searchKeyword) {
+    let XY = await getLocation();
+
+    $.ajax({
+        url: "/pharmach_list",
+        type: "GET",
+        cache: false,
+        dataType: "json",
+        data: {
+            "Q0": "",
+            "Q1": "",
+            "QT": "",
+            "QN": searchKeyword,
+            "ORD": "",
+            "pageNo": "1",
+            "numOfRows": "1000"
+        },
+                    success: function (data) {
+                        console.log(data);
+
+                        if (data.items && data.items.item) {
+                            if (Array.isArray(data.items.item)) {
+                                data.items.item.forEach(function (it, index) {
+                                    displayMarkerAndInfo(map, it);
+                                });
+                            } else {
+                                // 단일 결과일 경우
+                                displayMarkerAndInfo(map, data.items.item);
+                            }
+
+                            if (data.items.item.length > 0) {
+                                // 검색 결과가 있을 경우 가장 첫 번째 결과로 지도 이동
+                                let firstResultLocation = Array.isArray(data.items.item)
+                                    ? data.items.item[0]
+                                    : data.items.item;
+                                map.panTo(new naver.maps.LatLng(firstResultLocation.wgs84Lat, firstResultLocation.wgs84Lon));
+                            }
+                        } else {
+                            console.error("No items found in the response.");
+                        }
+                    },
+                    error: function (request, status, error) {
+                        console.log(error);
+                    }
+                });
+            }
+
+            function displayMarkerAndInfo(map, it) {
+                let dutyName = it.dutyName;
+                let dutyAddr = it.dutyAddr;
+                let dutyTel1 = it.dutyTel1;
+                let pharmacyId = it.id;
+
+                let dutyTime = "";
+                if (it.dutyTime1s && it.dutyTime1c) {
+                    dutyTime += "월요일: " + it.dutyTime1s + " ~ " + it.dutyTime1c + "<br>";
+                }
+                if (it.dutyTime2s && it.dutyTime2c) {
+                    dutyTime += "화요일: " + it.dutyTime2s + " ~ " + it.dutyTime2c + "<br>";
+                }
+                if (it.dutyTime3s && it.dutyTime3c) {
+                    dutyTime += "수요일: " + it.dutyTime3s + " ~ " + it.dutyTime3c + "<br>";
+                }
+                if (it.dutyTime4s && it.dutyTime4c) {
+                    dutyTime += "목요일: " + it.dutyTime4s + " ~ " + it.dutyTime4c + "<br>";
+                }
+                if (it.dutyTime5s && it.dutyTime5c) {
+                    dutyTime += "금요일: " + it.dutyTime5s + " ~ " + it.dutyTime5c + "<br>";
+                }
+                if (it.dutyTime6s && it.dutyTime6c) {
+                    dutyTime += "토요일: " + it.dutyTime6s + " ~ " + it.dutyTime6c + "<br>";
+                }
+                if (it.dutyTime7s && it.dutyTime7c) {
+                    dutyTime += "일요일: " + it.dutyTime7s + " ~ " + it.dutyTime7c + "<br>";
+                }
+                if (it.dutyTime8s && it.dutyTime8c) {
+                    dutyTime += "공휴일: " + it.dutyTime8s + " ~ " + it.dutyTime8c + "<br>";
+                }
+                
+
+                let pharmacy_location = new naver.maps.LatLng(it.wgs84Lat, it.wgs84Lon);
+
+                let marker = new naver.maps.Marker({
+                    map: map,
+                    position: pharmacy_location
+                });
+
+                let contentString = [
+            '<div class="iw_inner">',
+            '   <h3>' + dutyName + '</h3>',
+            '   <p>' + dutyAddr + '<br />',
+            '<button onclick="window.open(\'https://map.kakao.com/link/to/' + dutyName + ',' + it.wgs84Lat + ',' + it.wgs84Lon + '\');">카카오맵 연결</button>',
+            '       ' + dutyTel1 + '<br />',
+            '       ' + dutyTime,
+            '   </p>',
+            '<button onclick="openChatBox(' + pharmacyId + ', \'' + dutyName + '\')">실시간 채팅하기</button>',
+            '</div>'
+        ].join('');
+
+                var infowindow = new naver.maps.InfoWindow({
+                    content: contentString,
+                    maxWidth: 440,
+                    backgroundColor: "#eee",
+                    borderColor: "#2db400",
+                    borderWidth: 5,
+                    anchorSize: new naver.maps.Size(30, 30),
+                    anchorSkew: true,
+                    anchorColor: "#eee",
+                    pixelOffset: new naver.maps.Point(20, -20)
+                });
+
+                naver.maps.Event.addListener(marker, "click", function (e) {
+                    if (infowindow.getMap()) {
+                        infowindow.close();
+                    } else {
+                        infowindow.open(map, marker);
+ }
+                });
+            }
+
+           async function getLocation() {
+                let XY = new Object();
+                if (navigator.geolocation) {
+                    let promise = new Promise((resolve, rejected) => {
+                        navigator.geolocation.getCurrentPosition((position) => {
+                            resolve(position);
+                        });
+                    });
+
+                    let position = await promise;
+                    XY.lat = position.coords.latitude;
+                    XY.lng = position.coords.longitude;
+                }
+                return XY;
+            }
+        });
+    </script>
+</html>
+

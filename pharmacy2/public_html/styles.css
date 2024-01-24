@@ -1,0 +1,324 @@
+/* styles.css */
+body {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+}
+
+#searchBox {
+    position: absolute;
+    top: 30px;
+    left: 280px;
+    background-color: #fff;
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    z-index: 1000; /* Ensure the search box appears above the map */
+}
+
+#searchInput {
+    width: 200px;
+    padding: 8px;
+    margin-right: 5px;
+}
+
+#searchButton {
+    padding: 8px 15px;
+    background-color: #2db400;
+    color: #fff;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+#map {
+    width: 98%;
+    height: 98vh;
+}
+
+#pharmap-main {
+    width: 100%;
+    height: 100%;
+}
+
+/* 상단바 스타일링 */
+#topbar {
+    background-color: #f5f5f5; /* 연한 베이지 톤으로 수정 */
+    color: #333; /* 텍스트 색상 수정 */
+    z-index: 1; /* 상단에 위치하도록 함 */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #b9b9b9;
+}
+
+#location-box {
+    padding: 8px;
+    background-color: rgb(0, 75, 17);
+    color: #fff;
+    border-radius: 5px;
+    display: inline-block;
+    margin: 0 150px 0 0;
+    font-size: 20px;
+    font: 900;
+}
+
+#logo {
+    width: 180px;
+}
+
+#topbar-content {
+    display: flex;
+    align-items: center;
+    margin: 0 60px 0 0;
+}
+
+#topbar button {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 10px;
+    margin: 5px;
+    cursor: pointer;
+}
+
+#topbar button:hover {
+    background-color: #45a049;
+}
+
+/* 사이드바 스타일링 */
+#sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 200px;
+    background-color: #f5f5f5; /* 연한 베이지 톤으로 수정 */
+    padding-top: 20px;
+    text-align: center;
+    transition: 0.5s;
+    border-right: 1px solid #ccc;
+    z-index: 0; /* 상단바 아래에 위치하도록 함 */
+}
+
+#memo {
+    width: 90%;
+    height: 80%;
+    margin: 100px 0 0 0;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+/* 네비게이션 버튼 스타일링 */
+#sidebar button {
+    width: 80%;
+    margin: 10px 0;
+    padding: 10px;
+    font-size: 16px;
+    cursor: pointer;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+}
+
+#sidebar button:hover {
+    background-color: #45a049;
+}
+
+/* 지도를 사이드바 오른쪽에 배치 */
+#map {
+    margin-left: 20px; /* 여유 여백 조절 */
+}
+
+#logo {
+    max-width: 70%; /* 로고의 최대 너비 설정 */
+    margin: 20px 0 20px 0; /* 로고 아래 여백 설정 */
+}
+
+
+
+/* 채팅창 */
+
+/* 채팅창 스타일 수정 */
+.chat-container {
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
+    width: 400px;  /* 변경된 크기 */
+    height: 400px;
+    max-width: 100%;  /* 최대 가로 크기 */
+    max-height: 100%; /* 최대 세로 크기 */
+    overflow-y: auto; /* 세로 스크롤 추가 */
+    background-color: #fff;
+    border: 1px solid #ccc;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;  /* 아래쪽으로 쌓이도록 설정 */
+}
+
+#messages {
+    flex: 1;
+    overflow-y: auto;
+    scroll-behavior: smooth; /* 스크롤을 부드럽게 이동하도록 설정 */
+}
+
+
+
+.chat-container input,
+.chat-container button {
+    margin-top: 5px;
+}
+
+.input-box {
+    position: fixed;
+    bottom: 10px;
+    display: flex;
+    align-items: center;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    padding: 10px;
+    width: 380px;
+}
+
+.message-input {
+    flex: 1;
+    padding: 8px;
+    margin-right: 5px;
+}
+
+#chatButton {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    padding: 10px;
+    background-color: #4caf50;
+    color: #ffffff;
+    border: none;
+    cursor: pointer;
+}
+
+#chatBox {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    width: 350px;
+    height: 350px;
+    background-color: #ffffff;
+    border: 1px solid #dddddd;
+    padding: 10px;
+    overflow-y: auto;
+    display: none;
+}
+
+#chatInputContainer {
+    display: flex;
+    align-items: center;
+    margin-top: 10px;
+}
+
+#chatInput {
+    flex: 1;
+    padding: 5px;
+    margin-right: 5px;
+}
+
+#sendButton {
+    padding: 5px 10px;
+    background-color: #4caf50;
+    color: #ffffff;
+    border: none;
+    cursor: pointer;
+}
+
+
+
+  #chatMessages p.myMessage {
+    background-color: #f2f2f2; /* 연한 회색 */
+  }
+
+  /* 채팅 메시지 스타일 */
+#chatMessages p {
+    padding: 8px;
+    margin: 5px 0;
+    border-radius: 5px;
+}
+
+/* 약사인 경우 채팅 배경을 노란색으로 설정 */
+#chatMessages p.pharmacist {
+    background-color: yellow;
+}
+
+  #logoutButton {
+    margin-left: 20px !important;
+  }
+
+
+
+  #content {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px;
+}
+
+.post {
+    border: 1px solid #ddd;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+.comment {
+    border: 1px solid #eee;
+    padding: 5px;
+    margin-top: 5px;
+}
+
+
+
+#freepostContainer {
+    max-width: 800px;
+    margin: 20px auto;
+}
+
+.postItem, .commentItem {
+    border: 1px solid #ddd;
+    margin: 10px 0;
+    padding: 10px;
+    cursor: pointer;
+    background-color: #f9f9f9;
+}
+
+.postItem:hover, .commentItem:hover {
+    background-color: #e0e0e0;
+}
+
+#postForm, #commentForm {
+    background-color: #f9f9f9;
+    padding: 15px;
+    margin-top: 20px;
+    border: 1px solid #ddd;
+}
+
+#newPostForm, #newCommentForm {
+    display: flex;
+    flex-direction: column;
+}
+
+label {
+    margin-bottom: 5px;
+}
+
+textarea {
+    height: 100px;
+    margin-bottom: 10px;
+}
+
+#topbar-location {
+    margin-right: 20px;
+}
