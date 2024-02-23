@@ -2,6 +2,12 @@
 
 ## 위치기반 약국찾기 웹 서비스
 
+  <img src="https://img.shields.io/badge/html5-E34F26?style=for-the-badge&logo=html5&logoColor=white"> 
+  <img src="https://img.shields.io/badge/css-1572B6?style=for-the-badge&logo=css3&logoColor=white"> 
+  <img src="https://img.shields.io/badge/javascript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black"> 
+<img src="https://img.shields.io/badge/node.js-339933?style=for-the-badge&logo=Node.js&logoColor=white">
+
+
 ### 소개페이지
 
 ![image](https://github.com/eujin99/pharmap/assets/155924495/189b8b16-3ee6-4f44-ba9c-04bef2f0a92c)
